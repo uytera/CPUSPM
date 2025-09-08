@@ -1,0 +1,13 @@
+*.idea/
+*.vscode/
+*/venv/
+*.dump
+**/__pycache__
+*.py[cod]
+node_modules/
+/sandbox.py
+.mypy_cache
+./face_sdk
+*.ipynb_checkpoints/
+test_v2/reports/
+*.python-version
