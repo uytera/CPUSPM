@@ -1,19 +1,21 @@
 import asyncio
 import logging
 import multiprocessing
+import os
 from collections import defaultdict
 from contextlib import asynccontextmanager
 from multiprocessing.shared_memory import SharedMemory
+from threading import Thread
 from typing import Optional, Tuple, AsyncGenerator, Any, Dict, Callable, List
 
 import settings
 from core.messages import WorkerMessage, MessageTypes
 from core.types import CommandType
-from core.utils import get_console_logger, ColorSpace
+from utils import get_console_logger, ColorSpace
 from core.worker.processors.realizations.average_image_processor import AISessionInitInfo
 from core.worker.processors.realizations.heatmap_image_processor import HISessionInitInfo
-from core.worker.utils import async_blocking_retry_send, clear_pipe, async_blocking_retry_recv, \
-    async_get_from_shared_memory
+from core.worker.transport_utils import async_blocking_retry_send, clear_pipe, async_blocking_retry_recv, \
+    async_get_from_shared_memory, PipeWaitThread
 from core.worker.worker import Worker
 from utils.exceptions import WorkerCriticalError, FreeProcessObtainTimeout, PipeMessageReceiveTimeout
 
@@ -23,6 +25,11 @@ class WorkerProcessManager:
     Manager MUST be instantiated in code where current active async loop is working
     otherwise pipe message handling will NOT work
     """
+
+    @staticmethod
+    def prepare_start_method():
+        if multiprocessing.get_start_method() == 'fork':
+            multiprocessing.set_start_method('spawn')
 
     def __init__(self, process_count: int):
         self.process_info = {}
@@ -69,7 +76,7 @@ class WorkerProcessManager:
         if session_id is None:
             while True:
                 for key, (
-                        _, busy_lock, manager_pipe, worker_pipe, transfer_memory, pipe_data_event
+                        _, busy_lock, manager_pipe, worker_pipe, transfer_memory, pipe_data_event, _
                 ) in self.process_info.items():
                     if not busy_lock.locked():
                         # acquire lock that mean process occupied by request
@@ -98,7 +105,7 @@ class WorkerProcessManager:
             await search_free_process_lock.acquire()
 
             if (pid := self.sessions.get(session_id)[1]) is not None:
-                _, busy_lock, manager_pipe, worker_pipe, transfer_memory, pipe_data_event = self.process_info[pid]
+                _, busy_lock, manager_pipe, worker_pipe, transfer_memory, pipe_data_event, _ = self.process_info[pid]
 
                 await busy_lock.acquire()
 
@@ -123,7 +130,7 @@ class WorkerProcessManager:
 
                     self.sessions[session_id] = (search_free_process_lock, most_free_process)
 
-                _, busy_lock, manager_pipe, worker_pipe, transfer_memory, pipe_data_event = self.process_info[
+                _, busy_lock, manager_pipe, worker_pipe, transfer_memory, pipe_data_event, _ = self.process_info[
                     most_free_process
                 ]
 
@@ -139,14 +146,21 @@ class WorkerProcessManager:
         multiprocessing.Pipe,
         multiprocessing.Pipe,
         SharedMemory,
-        asyncio.Event
+        asyncio.Event,
+        Optional[Thread]
     ]:
         manager_pipe, worker_pipe = multiprocessing.Pipe(duplex=True)
         transfer_memory = SharedMemory(create=True, size=settings.SHARED_MEMORY_SIZE_MB)
 
         # add event for receiving data from pipe
         data_available = asyncio.Event()
-        asyncio.get_event_loop().add_reader(manager_pipe.fileno(), data_available.set)
+        pipe_wait_thread = None
+
+        if os.name != 'nt':
+            asyncio.get_event_loop().add_reader(manager_pipe.fileno(), data_available.set)
+        else:
+            pipe_wait_thread = PipeWaitThread(manager_pipe, data_available)
+            pipe_wait_thread.start()
 
         busy_lock = asyncio.Lock()
 
@@ -162,10 +176,15 @@ class WorkerProcessManager:
             f"Shared memory: {transfer_memory.name}. "
         )
 
-        return process, busy_lock, manager_pipe, worker_pipe, transfer_memory, data_available
+        if os.name == 'nt':
+            # close redundant worker pipe on windows
+            worker_pipe.close()
+
+        # return link to Thread for gc shield.
+        return process, busy_lock, manager_pipe, worker_pipe, transfer_memory, data_available, pipe_wait_thread
 
     def _stop_process(self, pid: int):
-        process, busy_lock, manager_pipe, worker_pipe, transfer_memory, pipe_data_event = self.process_info[pid]
+        process, busy_lock, manager_pipe, worker_pipe, transfer_memory, pipe_data_event, _ = self.process_info[pid]
 
         # clear prev process resources
         try:
@@ -408,9 +427,6 @@ class WorkerProcessManager:
     def stop_processes(self):
         for key in self.process_info.keys():
             self._stop_process(key)
-
-    def __del__(self):
-        self.stop_processes()
 
 
 class CPUCommands:

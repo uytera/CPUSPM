@@ -5,7 +5,7 @@ from PIL import Image
 
 from core.messages import WorkerMessage, MessageTypes
 from core.worker.processors.interface import Processor
-from core.worker.utils import send_to_shared_memory
+from core.worker.transport_utils import send_to_shared_memory
 
 
 #############################################################

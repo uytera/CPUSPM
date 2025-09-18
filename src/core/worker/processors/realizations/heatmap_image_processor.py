@@ -8,7 +8,7 @@ from PIL import Image
 from core.messages import WorkerMessage, MessageTypes
 from core.types import CommandType
 from core.worker.processors.interface import ProcessorContext, Processor
-from core.worker.utils import blocking_retry_send, send_to_shared_memory
+from core.worker.transport_utils import blocking_retry_send, send_to_shared_memory
 
 
 ######################################################################

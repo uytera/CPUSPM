@@ -13,6 +13,8 @@ SUB_LOGGERS_LEVEL = logging.DEBUG if SUB_DEBUG else logging.WARNING
 
 SHARED_MEMORY_SIZE_MB = int(os.environ.get('SHARED_MEMORY_SIZE_MB', 100)) * 1024 * 1024 # 100 MB
 
+PROCESS_HUNG_TIMEOUT = float(os.environ.get('PIPE_WAIT_TO_RETRY', 10))
+
 PIPE_WAIT_TO_RETRY = float(os.environ.get('PIPE_WAIT_TO_RETRY', 0.1))
 PIPE_RETRY_COUNT = int(os.environ.get('PIPE_RETRY_COUNT', 10))
 

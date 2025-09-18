@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 from io import BytesIO
 from typing import Optional
@@ -7,9 +8,9 @@ from PIL import Image
 
 from core.messages import WorkerMessage, MessageTypes
 from core.types import CommandType
-from core.utils import ColorSpace, color_space_depth_map
+from utils import ColorSpace, color_space_depth_map
 from core.worker.processors.interface import ProcessorContext, Processor
-from core.worker.utils import blocking_retry_send, send_to_shared_memory
+from core.worker.transport_utils import blocking_retry_send, send_to_shared_memory
 
 
 #############################################################
@@ -86,7 +87,12 @@ class AverageImageProcessor(Processor):
             img_colorspace = session_context.img_colorspace
             result_image_buffer = session_context.result_image_buffer
 
-        image_obj = Image.open(data).convert(img_colorspace.value)
+        data_buffer = BytesIO(data)
+        try:
+            image_obj = Image.open(data_buffer).convert(img_colorspace.value)
+        finally:
+            data_buffer.close()
+
         image_array = np.asarray(image_obj, dtype=np.float32)
 
         rows = min(result_image_buffer.shape[0], image_array.shape[0])

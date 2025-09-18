@@ -9,10 +9,11 @@ from typing import Dict
 
 import settings
 from core.messages import WorkerMessage, MessageTypes
-from core.utils import get_console_logger, blocking_retry_recv, blocking_retry_send
-from core.utils.exceptions import WorkerCriticalError
+from utils import get_console_logger
+from utils.exceptions import WorkerCriticalError
 from core.worker.processors.factory import ProcessorFactory
 from core.worker.processors.interface import ProcessorContext
+from core.worker.transport_utils import blocking_retry_recv, blocking_retry_send
 
 
 class Worker(Process):
@@ -55,7 +56,7 @@ class Worker(Process):
         self._init_command_processor()
 
         self.logger.info(
-            f"Start process. Send pipe: {self.send_pipe.fileno()}. "
+            f"Start process. "
             f"Pipe: {self.pipe.fileno()}. "
             f"Shared memory: {self.transfer_memory.name}. "
         )
@@ -92,7 +93,7 @@ class Worker(Process):
                     processor = self.command_processor_factory.return_processor_by_command(message.command)
 
                     if message_type == MessageTypes.clear:
-                        processor.clear_session(message.session_id)
+                        processor.clear_session(message.session_id, message.rack)
                     elif message_type == MessageTypes.init_session:
                         processor.init_session(message)
                     elif message_type == MessageTypes.data:
