@@ -50,7 +50,7 @@ class HeatmapImageProcessor(Processor):
             raise Exception(f"Session with id: {message.session_id} already exists")
 
         heatmap_buffer = np.zeros(
-            (message_data.width, message_data.height, 3),
+            (message_data.width, message_data.height),
             np.float32
         )
 
@@ -90,8 +90,12 @@ class HeatmapImageProcessor(Processor):
         else:
             heatmap_buffer = session_context.heatmap_buffer
 
-        image_obj = Image.open(data).convert("RGB")
-        image_array = np.asarray(image_obj, dtype=np.float32) / 255.0
+        image_buffer = BytesIO(data)
+        try:
+            image_obj = Image.open(image_buffer).convert("RGB")
+            image_array = np.asarray(image_obj, dtype=np.float32) / 255.0
+        finally:
+            image_buffer.close()
 
         gray = 0.299 * image_array[:, :, 0] + 0.587 * image_array[:, :, 1] + 0.114 * image_array[:, :, 2]
 
@@ -104,7 +108,11 @@ class HeatmapImageProcessor(Processor):
             result = Image.fromarray(
                 self._get_heatmap(heatmap_buffer), mode="L"
             )
-            result.save(image_buffer)
+            result.save(
+                image_buffer,
+                format=session_context.img_format,
+                compress_level=session_context.img_compression_level
+            )
 
             send_to_shared_memory(
                 self._manager_pipe,

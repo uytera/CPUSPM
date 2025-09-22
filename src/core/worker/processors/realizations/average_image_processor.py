@@ -113,13 +113,13 @@ class AverageImageProcessor(Processor):
         image_buffer = BytesIO()
         try:
             self._logger.info(f"{session_id}|{self.processor_abbreviation}|Clear session")
-            session_data: AIContext = self._sessions[session_id]
+            session_context: AIContext = self._sessions[session_id]
 
-            result = Image.fromarray(np.uint8(session_data.result_image_buffer))
+            result = Image.fromarray(np.uint8(session_context.result_image_buffer))
             result.save(
                 image_buffer,
-                format=session_data.img_format,
-                compress_level=session_data.img_compression_level
+                format=session_context.img_format,
+                compress_level=session_context.img_compression_level
             )
 
             del self._sessions[session_id]

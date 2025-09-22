@@ -364,13 +364,13 @@ class WorkerProcessManager:
                 raise Exception(f"Unexpected message type get: {message.type}")
 
     async def clear_session(self, session_id: str, command: CommandType):
-        self.logger.info(f"{session_id}| Clear session")
+        self.logger.info(f"{session_id}|Clear session")
 
         # check for session existence
         try:
             pid = self.sessions[session_id][1]
         except KeyError:
-            self.logger.warning(f"{session_id}| Skip clear session. No key found")
+            self.logger.warning(f"{session_id}|Skip clear session. No key found")
             return
 
         # return if no session not linked to process e.d. no process need to clear
@@ -391,7 +391,7 @@ class WorkerProcessManager:
             del self.sessions[session_id]
 
     async def clear_session_with_result(self, session_id: str, command: CommandType) -> Optional[bytes]:
-        self.logger.info(f"{session_id}| Clear session")
+        self.logger.info(f"{session_id}|Clear session")
 
         # check for session existence
         try:
@@ -482,7 +482,7 @@ class CPUCommands:
             height: int,
             img_format: str,
             session_id: str
-    ) -> AsyncGenerator[Tuple[Callable, List]]:
+    ) -> AsyncGenerator[Callable]:
         # fake ref var by list
         data = []
 
@@ -507,16 +507,14 @@ class CPUCommands:
         )
 
         try:
-            yield work_function, data
+            yield work_function
         finally:
-            data.append(
-                await self.worker_manager.clear_session_with_result(
-                    session_id,
-                    CommandType.heatmap_image,
-                )
+            await self.worker_manager.clear_session(
+                session_id,
+                CommandType.heatmap_image,
             )
 
-    async def cast_video_frame_to_image(self, image: bytes) -> bytes:
+    async def image_to_grayscale(self, image: bytes) -> bytes:
         return await self.worker_manager.send_message_with_result(
             WorkerMessage(
                 type=MessageTypes.data,
