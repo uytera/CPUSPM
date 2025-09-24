@@ -5,7 +5,7 @@ from PIL import Image
 
 from core.messages import WorkerMessage, MessageTypes
 from core.worker.processors.interface import Processor
-from core.worker.utils import send_to_shared_memory
+from core.worker.transport_utils import send_to_shared_memory
 
 
 #############################################################
@@ -20,23 +20,28 @@ class GrayscaleImageProcessor(Processor):
         rack = message.rack
         data = message.data
 
-        image_buffer = BytesIO()
+        self._logger.info(f"{self.processor_abbreviation}|Handle image request")
+
+        image_buffer = BytesIO(data)
+        result_image_buffer = BytesIO()
         try:
-            image_obj = Image.open(data).convert("L")
-            image_obj.save(image_buffer)
+            image_obj = Image.open(image_buffer).convert("L")
+            # TODO add params to worker message for configuring format and compression level
+            image_obj.save(result_image_buffer, format="JPEG")
 
             send_to_shared_memory(
                 self._manager_pipe,
                 self._manager_shared_memory,
                 WorkerMessage(
                     type=MessageTypes.data,
-                    data=image_buffer.getvalue(),
+                    data=result_image_buffer.getvalue(),
                     # rack and session_id must be equal to original message
                     rack=rack
                 )
             )
         finally:
             image_buffer.close()
+            result_image_buffer.close()
 
     def clear_session(self, session_id, rack: Optional[str] = None):
         # no session realized in this processor

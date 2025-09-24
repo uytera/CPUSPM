@@ -1,19 +1,54 @@
 import asyncio
 import logging
 import multiprocessing
+import os
+import threading
 import time
 from io import BytesIO
 from multiprocessing import Pipe
 from multiprocessing.shared_memory import SharedMemory
 from pickle import dumps, UnpicklingError
 from pickle import loads
+from threading import Thread
 from typing import Any, Callable, Optional, Union
 
+import settings
 from core.messages import WorkerMessage, MessageTypes
-from core.utils import ReadNoCopyIO
+from utils import ReadNoCopyIO, get_console_logger
 from settings import PIPE_WAIT_TO_RETRY, PIPE_RETRY_COUNT, SH_MEM_RETRY_COUNT, SH_MEM_WAIT_TO_RETRY
 
 logger = logging.getLogger(__name__)
+
+
+class PipeWaitThread(Thread):
+    def __init__(self, pipe_end: multiprocessing.Pipe, data_available_event: asyncio.Event):
+        self.loop = asyncio.get_event_loop()
+        self.pipe_end = pipe_end
+        self.data_available_event = data_available_event
+        super().__init__()
+
+    def _init_logging(self):
+        formatter = logging.Formatter(
+            f'{settings.BASE_LOGGING_FORMAT}|Thread: {threading.get_ident()}|%(message)s'
+        )
+
+        self.logger = get_console_logger(
+            __name__,
+            formatter
+        )
+
+    def run(self):
+        self._init_logging()
+        self.logger.info(f"Start thread for pipe: {self.pipe_end.fileno()} polling")
+
+        try:
+            while True:
+                if self.pipe_end.poll() and not self.data_available_event.is_set():
+                    self.loop.call_soon_threadsafe(self.data_available_event.set)
+                else:
+                    time.sleep(0.01)
+        except OSError:
+            self.logger.warning(f"Thread closed because pipe is closed")
 
 
 class SharedMemoryWrap:
@@ -36,14 +71,14 @@ class SharedMemoryWrap:
     def write_data(self, data: Union[memoryview | bytes]):
 
         if isinstance(data, memoryview):
-            self._shared_memory.buf[1:len(data)] = data[:]
+            self._shared_memory.buf[1:len(data) + 1] = data[:]
         else:
-            self._shared_memory.buf[1:len(data)] = data
+            self._shared_memory.buf[1:len(data) + 1] = data
 
         self.clear_ready_to_write()
 
     def read_data(self, data_length: int) -> memoryview:
-        return self._shared_memory.buf[1:data_length]
+        return self._shared_memory.buf[1:data_length + 1]
 
 
 def retry_send_on_ready_shared_memory(sh_mem_wrap: SharedMemoryWrap, data: memoryview) -> None:
@@ -209,7 +244,7 @@ async def async_blocking_retry_recv(pipe: Pipe) -> Any:
         if pipe.poll():
             return pipe.recv()
 
-    await _async_blocking_retry_body(inner_func, "recv")
+    return await _async_blocking_retry_body(inner_func, "recv")
 
 
 async def async_blocking_retry_send(pipe: Pipe, data: Any) -> None:
