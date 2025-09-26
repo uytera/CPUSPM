@@ -6,8 +6,8 @@ from multiprocessing import Pipe
 from multiprocessing.shared_memory import SharedMemory
 from typing import Dict, Any, Optional
 
-from core.messages import WorkerMessage
-from core.types import CommandType
+from core.worker.messages import WorkerMessage
+from core.worker.types import CommandType
 
 
 @dataclass(kw_only=True)

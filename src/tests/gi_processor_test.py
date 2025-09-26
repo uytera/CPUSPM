@@ -3,7 +3,7 @@ from io import BytesIO
 
 from PIL import Image
 
-from core.worker_manager import WorkerProcessManager, CPUCommands
+from core.worker.worker_manager import WorkerProcessManager, CPUCommands
 
 images = [
     '.\\test_data\\1.jpg'

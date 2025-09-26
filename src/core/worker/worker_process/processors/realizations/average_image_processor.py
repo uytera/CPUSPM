@@ -1,4 +1,3 @@
-import time
 from dataclasses import dataclass
 from io import BytesIO
 from typing import Optional
@@ -6,11 +5,11 @@ from typing import Optional
 import numpy as np
 from PIL import Image
 
-from core.messages import WorkerMessage, MessageTypes
-from core.types import CommandType
+from core.worker.messages import WorkerMessage, MessageTypes
+from core.worker.types import CommandType, ImageFormat
 from utils import ColorSpace, color_space_depth_map
-from core.worker.processors.interface import ProcessorContext, Processor
-from core.worker.transport_utils import blocking_retry_send, send_to_shared_memory
+from core.worker.worker_process.processors.interface import ProcessorContext, Processor
+from core.worker.worker_process.transport_utils import blocking_retry_send, send_to_shared_memory
 
 
 #############################################################
@@ -21,7 +20,7 @@ from core.worker.transport_utils import blocking_retry_send, send_to_shared_memo
 class AISessionInitInfo:
     width: int
     height: int
-    img_format: str
+    img_format: ImageFormat
     img_colorspace: ColorSpace
 
 
@@ -29,7 +28,7 @@ class AISessionInitInfo:
 class AIContext(ProcessorContext):
     width: int
     height: int
-    img_format: str
+    img_format: ImageFormat
     img_colorspace: ColorSpace
     result_image_buffer: np.ndarray
     img_compression_level = 90
@@ -118,7 +117,7 @@ class AverageImageProcessor(Processor):
             result = Image.fromarray(np.uint8(session_context.result_image_buffer))
             result.save(
                 image_buffer,
-                format=session_context.img_format,
+                format=session_context.img_format.value,
                 compress_level=session_context.img_compression_level
             )
 

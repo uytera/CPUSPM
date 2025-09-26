@@ -9,14 +9,14 @@ from threading import Thread
 from typing import Optional, Tuple, AsyncGenerator, Any, Dict, Callable, List
 
 import settings
-from core.messages import WorkerMessage, MessageTypes
-from core.types import CommandType
+from core.worker.messages import WorkerMessage, MessageTypes
+from core.worker.types import CommandType, ImageFormat
 from utils import get_console_logger, ColorSpace
-from core.worker.processors.realizations.average_image_processor import AISessionInitInfo
-from core.worker.processors.realizations.heatmap_image_processor import HISessionInitInfo
-from core.worker.transport_utils import async_blocking_retry_send, clear_pipe, async_blocking_retry_recv, \
+from core.worker.worker_process.processors.realizations.average_image_processor import AISessionInitInfo
+from core.worker.worker_process.processors.realizations.heatmap_image_processor import HISessionInitInfo
+from core.worker.worker_process.transport_utils import async_blocking_retry_send, clear_pipe, async_blocking_retry_recv, \
     async_get_from_shared_memory, PipeWaitThread
-from core.worker.worker import Worker
+from core.worker.worker_process.worker import Worker
 from utils.exceptions import WorkerCriticalError, FreeProcessObtainTimeout, PipeMessageReceiveTimeout
 
 
@@ -240,7 +240,8 @@ class WorkerProcessManager:
 
         logger_prefix = f"{message.session_id}|{message.rack}"
 
-        # clear pipe before sending message because some error situations or early connection close can cause messages leaved in pipes
+        # clear pipe before sending message because some error situations or early connection close
+        # can cause messages leaved in pipes
         remain_messages = clear_pipe(manager_pipe)
         if remain_messages:
             self.logger.warning(
@@ -438,7 +439,7 @@ class CPUCommands:
             self,
             width: int,
             height: int,
-            img_format: str,
+            img_format: ImageFormat,
             session_id: str
     ) -> AsyncGenerator[Tuple[Callable, List]]:
         # fake ref var by list
@@ -480,7 +481,7 @@ class CPUCommands:
             self,
             width: int,
             height: int,
-            img_format: str,
+            img_format: ImageFormat,
             session_id: str
     ) -> AsyncGenerator[Callable]:
         # fake ref var by list

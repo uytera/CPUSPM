@@ -3,9 +3,9 @@ from typing import Optional
 
 from PIL import Image
 
-from core.messages import WorkerMessage, MessageTypes
-from core.worker.processors.interface import Processor
-from core.worker.transport_utils import send_to_shared_memory
+from core.worker.messages import WorkerMessage, MessageTypes
+from core.worker.worker_process.processors.interface import Processor
+from core.worker.worker_process.transport_utils import send_to_shared_memory
 
 
 #############################################################
@@ -27,7 +27,7 @@ class GrayscaleImageProcessor(Processor):
         try:
             image_obj = Image.open(image_buffer).convert("L")
             # TODO add params to worker message for configuring format and compression level
-            image_obj.save(result_image_buffer, format="JPEG")
+            image_obj.save(result_image_buffer, format="jpeg")
 
             send_to_shared_memory(
                 self._manager_pipe,

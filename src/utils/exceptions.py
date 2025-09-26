@@ -1,30 +1,10 @@
 # WS EXCEPTIONS
 
-class ComponentTimeouts(Exception):
+class ClientSendDataTimeout(Exception):
     pass
 
 
-class ComponentMessageSendTimeout(ComponentTimeouts):
-    pass
-
-
-class ComponentBinaryDataSendTimeout(ComponentTimeouts):
-    pass
-
-
-class ComponentPacketDataSendTimeout(ComponentTimeouts):
-    pass
-
-
-class ComponentVideoChunkDataSendTimeout(ComponentTimeouts):
-    pass
-
-
-class NoVideoTransferred(Exception):
-    pass
-
-
-# DECODING MANAGER EXCEPTIONS
+# WORKER MANAGER EXCEPTIONS
 
 class FreeProcessObtainTimeout(Exception):
     pass

@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Optional
 
-from core.types import CommandType
+from core.worker.types import CommandType
 
 
 class MessageTypes(Enum):

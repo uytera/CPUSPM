@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import multiprocessing
-import os
 import threading
 import time
 from io import BytesIO
@@ -13,7 +12,7 @@ from threading import Thread
 from typing import Any, Callable, Optional, Union
 
 import settings
-from core.messages import WorkerMessage, MessageTypes
+from core.worker.messages import WorkerMessage, MessageTypes
 from utils import ReadNoCopyIO, get_console_logger
 from settings import PIPE_WAIT_TO_RETRY, PIPE_RETRY_COUNT, SH_MEM_RETRY_COUNT, SH_MEM_WAIT_TO_RETRY
 
