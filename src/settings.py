@@ -16,6 +16,11 @@ SUB_LOGGERS_LEVEL = logging.DEBUG if SUB_DEBUG else logging.WARNING
 
 APP_VERSION = os.environ['APP_VERSION']
 ROOT_PATH = os.environ.get('ROOT_PATH', '/')
+WEBSOCKET_TIMEOUT = int(os.environ.get('WEBSOCKET_TIMEOUT', 60))
+
+# transport timeouts
+
+MESSAGE_WAIT_TIMEOUT = int(os.environ.get('MESSAGE_WAIT_TIMEOUT', 60))
 
 # worker process settings
 

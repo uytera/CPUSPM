@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 from abc import ABC, abstractmethod
@@ -5,6 +6,7 @@ from abc import ABC, abstractmethod
 import settings
 from core.session_wrap.messages import IncomingMessage, OutcomingMessage, OutcomingMessageType
 from utils import get_console_logger
+from utils.exceptions import ClientMessageSendTimeout
 
 
 class TwoWayTransportInterface(ABC):
@@ -19,8 +21,15 @@ class TwoWayTransportInterface(ABC):
             formatter
         )
 
-    async def receive_message(self) -> IncomingMessage:
-        message = await self._recv_text()
+    async def recv_message(self) -> IncomingMessage:
+        try:
+            message = await asyncio.wait_for(
+                self._recv_text(),
+                timeout=settings.MESSAGE_WAIT_TIMEOUT
+            )
+        except asyncio.TimeoutError:
+            raise ClientMessageSendTimeout()
+
         self.logger.info(f"Receive message from client: {message}")
 
         return IncomingMessage.load_model(message)

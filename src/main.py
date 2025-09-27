@@ -10,8 +10,10 @@ from uvicorn_worker import UvicornWorker
 from websockets import ConnectionClosedOK, ConnectionClosed
 
 import settings
+from core.session_wrap.message_handler import MessageHandler
+from core.session_wrap.transport.realizations.websocket import WebSocketTransport
 from core.worker.worker_manager import WorkerProcessManager, CPUCommands
-from utils.exceptions import ClientSendDataTimeout
+from utils.exceptions import ClientTimeout
 from utils.metrics import CpuSpmMetrics
 from utils.metrics.manager import get_metrics_manager
 
@@ -81,34 +83,27 @@ async def websocket_endpoint(websocket: WebSocket):
 
         metrics_manager.update_gauge_metric(CpuSpmMetrics.WebsocketConnectionCount.value, 1)
 
-        # websocket.app.state.cpu_commands
-
-    except* ClientSendDataTimeout as ex:
-        # unpack exception group
-        exception = ex.exceptions[0]
-
-        logger.warning(f"{logger_prefix}Client not send any data. Exception: {type(exception).__name__}")
+        await MessageHandler(
+            tw_transport=WebSocketTransport(websocket),
+            cpu_commands=websocket.app.state.cpu_commands
+        ).handle_cycle()
+    except ClientTimeout as ex:
+        logger.warning(f"{logger_prefix}Client not send any data. Exception: {type(ex).__name__}")
         await websocket.close(code=3008)
-    except* RuntimeError as ex:
-        # unpack exception group
-        exception = ex.exceptions[0]
-
-        if isinstance(exception, RuntimeError) and str(exception).startswith("Unexpected ASGI message"):
-            logger.warning(f"Unexpected socket state: {exception}")
+    except RuntimeError as ex:
+        if isinstance(ex, RuntimeError) and str(ex).startswith("Unexpected ASGI message"):
+            logger.warning(f"Unexpected socket state: {ex}")
         else:
             raise
 
-    except* (ConnectionClosed, WebSocketDisconnect, RuntimeError) as ex:
-        # unpack exception group
-        exception = ex.exceptions[0]
-
+    except (ConnectionClosed, WebSocketDisconnect, RuntimeError) as ex:
         # warning on unexpected connection close
         if not (
-            (type(exception) is WebSocketDisconnect and (exception.code == 1000 or exception.code == 1001)) or
-            type(exception) is ConnectionClosedOK
+            (type(ex) is WebSocketDisconnect and (ex.code == 1000 or ex.code == 1001)) or
+            type(ex) is ConnectionClosedOK
         ):
-            logger.warning(f"Unexpected connection close: {exception}")
-    except* Exception:
+            logger.warning(f"Unexpected connection close: {ex}")
+    except Exception:
         await websocket.close(code=1011)
         raise
     finally:

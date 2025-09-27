@@ -1,6 +1,14 @@
 # WS EXCEPTIONS
 
-class ClientSendDataTimeout(Exception):
+class ClientTimeout(Exception):
+    pass
+
+
+class ClientMessageSendTimeout(ClientTimeout):
+    pass
+
+
+class ClientBinaryDataSendTimeout(ClientTimeout):
     pass
 
 
