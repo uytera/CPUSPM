@@ -12,7 +12,7 @@ from utils.exceptions import ClientMessageSendTimeout
 class TwoWayTransportInterface(ABC):
 
     def __init__(self):
-        self.transport_session_id = str(uuid.uuid4())[:4]
+        self.transport_session_id = str(uuid.uuid4())[:5]
         formatter = logging.Formatter(
             f'{settings.BASE_LOGGING_FORMAT}|Transport|{self.transport_session_id}|%(message)s'
         )
@@ -32,7 +32,7 @@ class TwoWayTransportInterface(ABC):
 
         self.logger.info(f"Receive message from client: {message}")
 
-        return IncomingMessage.load_model(message)
+        return IncomingMessage.model_validate_json(message)
 
     async def send_message(self, message: str):
         self.logger.info(f"Send test message to client: {message}")

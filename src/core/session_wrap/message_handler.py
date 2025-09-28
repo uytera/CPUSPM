@@ -1,12 +1,13 @@
 import asyncio
+
 from anyio import get_cancelled_exc_class
 from starlette.websockets import WebSocketDisconnect
 from websockets import ConnectionClosed
 
-
 from core.session_wrap.flow.factory import TwoWayFlowFactory
 from core.session_wrap.transport import TwoWayTransportInterface
 from core.worker.worker_manager import CPUCommands
+from utils.exceptions import ClientTimeout
 
 
 class MessageHandler:
@@ -20,6 +21,7 @@ class MessageHandler:
     async def handle_cycle(self):
         while True:
             try:
+                # TODO handle invalid message type without stacktrace in logs
                 message = await self.tw_transport.recv_message()
 
                 required_flow = TwoWayFlowFactory.get_flow(
@@ -35,6 +37,7 @@ class MessageHandler:
                     get_cancelled_exc_class(),
                     WebSocketDisconnect,
                     ConnectionClosed,
+                    ClientTimeout,
                     RuntimeError) as ex:
                 self.logger.debug("Stop message handling cycle: %s-%s", type(ex).__name__, ex)
                 # raise errors to fastapi router level and abort connection

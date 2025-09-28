@@ -98,10 +98,6 @@ class MetricsManager(metaclass=Singleton):
 
 def get_metrics_manager():
     return MetricsManager([
-        (CpuSpmMetrics.WebrtcConnectionCount.value, "Number current webrtc connections", MetricType.gauge),
         (CpuSpmMetrics.WebsocketConnectionCount.value, "Number current websocket connections", MetricType.gauge),
         (CpuSpmMetrics.WebsocketAverageConnectionDuration.value, "Average websocket connection duration", MetricType.average),
-        (CpuSpmMetrics.WebsocketAverageVideoChunkSize.value,
-         "Average video chunk size witch transferred via websocket",
-         MetricType.average),
     ])

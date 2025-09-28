@@ -22,7 +22,6 @@ ws_timeout = (int(os.environ['WEBSOCKET_TIMEOUT']) + 10) // 2
 
 class CustomUvicornWorker(UvicornWorker):
     CONFIG_KWARGS = {
-        "limit_concurrency": int(os.environ['UVICORN_CONCURRENCY']),
         "ws_ping_interval": ws_timeout,
         "ws_ping_timeout": ws_timeout,
         "http": "httptools",

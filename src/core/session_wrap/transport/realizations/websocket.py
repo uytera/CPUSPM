@@ -24,7 +24,7 @@ class WebSocketTransport(TwoWayTransportInterface):
     async def recv_bytes(self) -> bytes:
         try:
             return await asyncio.wait_for(
-                self.recv_bytes(),
+                self.websocket_connection.receive_bytes(),
                 timeout=settings.MESSAGE_WAIT_TIMEOUT
             )
         except asyncio.TimeoutError:
