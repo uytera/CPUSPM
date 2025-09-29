@@ -1,4 +1,3 @@
-import time
 from dataclasses import dataclass
 from io import BytesIO
 from typing import Optional
@@ -6,11 +5,11 @@ from typing import Optional
 import numpy as np
 from PIL import Image
 
-from core.messages import WorkerMessage, MessageTypes
-from core.types import CommandType
+from core.worker.messages import WorkerMessage, MessageTypes
+from core.worker.types import CommandType, ImageFormat
 from utils import ColorSpace, color_space_depth_map
-from core.worker.processors.interface import ProcessorContext, Processor
-from core.worker.transport_utils import blocking_retry_send, send_to_shared_memory
+from core.worker.worker_process.processors.interface import ProcessorContext, Processor
+from core.worker.worker_process.transport_utils import blocking_retry_send, send_to_shared_memory
 
 
 #############################################################
@@ -18,28 +17,28 @@ from core.worker.transport_utils import blocking_retry_send, send_to_shared_memo
 #############################################################
 
 @dataclass
-class AISessionInitInfo:
+class SISessionInitInfo:
     width: int
     height: int
-    img_format: str
+    img_format: ImageFormat
     img_colorspace: ColorSpace
 
 
 @dataclass
-class AIContext(ProcessorContext):
+class SIContext(ProcessorContext):
     width: int
     height: int
-    img_format: str
+    img_format: ImageFormat
     img_colorspace: ColorSpace
     result_image_buffer: np.ndarray
     img_compression_level = 90
 
 
-class AverageImageProcessor(Processor):
-    processor_abbreviation = "AI"
+class SummaryImageProcessor(Processor):
+    processor_abbreviation = "SI"
 
     def init_session(self, message: WorkerMessage):
-        message_data: AISessionInitInfo = message.data
+        message_data: SISessionInitInfo = message.data
 
         session_context = self._sessions.get(message.session_id)
         if session_context is not None:
@@ -50,8 +49,8 @@ class AverageImageProcessor(Processor):
             np.float32
         )
 
-        session_context = AIContext(
-            command_type=CommandType.average_image,
+        session_context = SIContext(
+            command_type=CommandType.summary_image,
             width=message_data.width,
             height=message_data.height,
             img_format=message_data.img_format,
@@ -79,7 +78,7 @@ class AverageImageProcessor(Processor):
         if session_id is None:
             raise Exception(f"Session must specified for {self.processor_abbreviation} command processing")
 
-        session_context: AIContext = self._sessions.get(session_id)
+        session_context: SIContext = self._sessions.get(session_id)
 
         if session_context is None:
             raise Exception(f"Session with id: {session_id} not exists but processing requested")
@@ -113,12 +112,12 @@ class AverageImageProcessor(Processor):
         image_buffer = BytesIO()
         try:
             self._logger.info(f"{session_id}|{self.processor_abbreviation}|Clear session")
-            session_context: AIContext = self._sessions[session_id]
+            session_context: SIContext = self._sessions[session_id]
 
             result = Image.fromarray(np.uint8(session_context.result_image_buffer))
             result.save(
                 image_buffer,
-                format=session_context.img_format,
+                format=session_context.img_format.value,
                 compress_level=session_context.img_compression_level
             )
 

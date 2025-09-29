@@ -3,7 +3,8 @@ from io import BytesIO
 
 from PIL import Image
 
-from core.worker_manager import WorkerProcessManager, CPUCommands
+from core.worker.types import ImageFormat
+from core.worker.worker_manager import WorkerProcessManager, CPUCommands
 
 images = [
     '.\\test_data\\1.jpg',
@@ -18,7 +19,7 @@ async def async_main():
     wpm = WorkerProcessManager(2)
     try:
         cpc = CPUCommands(wpm)
-        async with cpc.heatmap_image_accumulator(1024, 1024, "jpeg", "wow") as work_function:
+        async with cpc.heatmap_image_accumulator(1024, 1024, ImageFormat.jpeg, "wow") as work_function:
 
             for image_path in images:
                 with open(image_path, 'rb') as image_bytes:

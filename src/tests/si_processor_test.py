@@ -3,7 +3,8 @@ from io import BytesIO
 
 from PIL import Image
 
-from core.worker_manager import WorkerProcessManager, CPUCommands
+from core.worker.types import ImageFormat
+from core.worker.worker_manager import WorkerProcessManager, CPUCommands
 
 images = [
     '.\\test_data\\1.jpg',
@@ -18,7 +19,7 @@ async def async_main():
     wpm = WorkerProcessManager(2)
     try:
         cpc = CPUCommands(wpm)
-        async with cpc.average_image_accumulator(1024, 1024, "jpeg", "wow") as args_tuple:
+        async with cpc.summary_image_accumulator(1024, 1024, ImageFormat.jpeg, "wow") as args_tuple:
             work_function, result_list = args_tuple
 
             for image_path in images:

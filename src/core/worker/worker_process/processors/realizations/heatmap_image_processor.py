@@ -5,10 +5,10 @@ from typing import Optional
 import numpy as np
 from PIL import Image
 
-from core.messages import WorkerMessage, MessageTypes
-from core.types import CommandType
-from core.worker.processors.interface import ProcessorContext, Processor
-from core.worker.transport_utils import blocking_retry_send, send_to_shared_memory
+from core.worker.messages import WorkerMessage, MessageTypes
+from core.worker.types import CommandType, ImageFormat
+from core.worker.worker_process.processors.interface import ProcessorContext, Processor
+from core.worker.worker_process.transport_utils import blocking_retry_send, send_to_shared_memory
 
 
 ######################################################################
@@ -19,14 +19,14 @@ from core.worker.transport_utils import blocking_retry_send, send_to_shared_memo
 class HISessionInitInfo:
     width: int
     height: int
-    img_format: str
+    img_format: ImageFormat
 
 
 @dataclass
 class HIContext(ProcessorContext):
     width: int
     height: int
-    img_format: str
+    img_format: ImageFormat
     heatmap_buffer: np.ndarray
     img_compression_level = 90
 
@@ -97,6 +97,7 @@ class HeatmapImageProcessor(Processor):
         finally:
             image_buffer.close()
 
+        # grey cast numbers https://stackoverflow.com/questions/596216/formula-to-determine-perceived-brightness-of-rgb-color
         gray = 0.299 * image_array[:, :, 0] + 0.587 * image_array[:, :, 1] + 0.114 * image_array[:, :, 2]
 
         rows = min(heatmap_buffer.shape[0], gray.shape[0])
@@ -110,7 +111,7 @@ class HeatmapImageProcessor(Processor):
             )
             result.save(
                 image_buffer,
-                format=session_context.img_format,
+                format=session_context.img_format.value,
                 compress_level=session_context.img_compression_level
             )
 

@@ -8,6 +8,10 @@ pillow = "11.2.1"
 numpy = "2.3.2"
 matplotlib = "3.10.6"
 aiortc = "1.13.0"
+uvicorn = {extras = ["standard"], version = "==0.33.0"}
+uvicorn-worker = "0.3.0"
+fastapi = "0.115.12"
+websocket-client = "1.8.0"
 [dev-packages]
 
 [requires]

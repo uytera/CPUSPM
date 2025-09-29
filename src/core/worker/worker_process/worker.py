@@ -8,12 +8,12 @@ from multiprocessing.shared_memory import SharedMemory
 from typing import Dict
 
 import settings
-from core.messages import WorkerMessage, MessageTypes
+from core.worker.messages import WorkerMessage, MessageTypes
 from utils import get_console_logger
 from utils.exceptions import WorkerCriticalError
-from core.worker.processors.factory import ProcessorFactory
-from core.worker.processors.interface import ProcessorContext
-from core.worker.transport_utils import blocking_retry_recv, blocking_retry_send
+from core.worker.worker_process.processors.factory import ProcessorFactory
+from core.worker.worker_process.processors.interface import ProcessorContext
+from core.worker.worker_process.transport_utils import blocking_retry_recv, blocking_retry_send
 
 
 class Worker(Process):

@@ -3,16 +3,16 @@ from multiprocessing import Pipe
 from multiprocessing.shared_memory import SharedMemory
 from typing import Dict, Any
 
-from core.types import CommandType
-from core.worker.processors.interface import Processor
-from core.worker.processors.realizations.average_image_processor import AverageImageProcessor
-from core.worker.processors.realizations.grayscale_image_processor import GrayscaleImageProcessor
-from core.worker.processors.realizations.heatmap_image_processor import HeatmapImageProcessor
+from core.worker.types import CommandType
+from core.worker.worker_process.processors.interface import Processor
+from core.worker.worker_process.processors.realizations.summary_image_processor import SummaryImageProcessor
+from core.worker.worker_process.processors.realizations.grayscale_image_processor import GrayscaleImageProcessor
+from core.worker.worker_process.processors.realizations.heatmap_image_processor import HeatmapImageProcessor
 
 
 class ProcessorFactory:
     processor_cmd_type_mapping: Dict[CommandType, type[Processor]] = {
-        CommandType.average_image: AverageImageProcessor,
+        CommandType.summary_image: SummaryImageProcessor,
         CommandType.heatmap_image: HeatmapImageProcessor,
         CommandType.grayscale_image: GrayscaleImageProcessor
     }
