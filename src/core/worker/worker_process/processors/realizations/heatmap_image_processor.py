@@ -97,6 +97,7 @@ class HeatmapImageProcessor(Processor):
         finally:
             image_buffer.close()
 
+        # grey cast numbers https://stackoverflow.com/questions/596216/formula-to-determine-perceived-brightness-of-rgb-color
         gray = 0.299 * image_array[:, :, 0] + 0.587 * image_array[:, :, 1] + 0.114 * image_array[:, :, 2]
 
         rows = min(heatmap_buffer.shape[0], gray.shape[0])

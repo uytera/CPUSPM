@@ -27,8 +27,8 @@ class TwoWayTransportInterface(ABC):
                 self._recv_text(),
                 timeout=settings.MESSAGE_WAIT_TIMEOUT
             )
-        except asyncio.TimeoutError:
-            raise ClientMessageSendTimeout()
+        except asyncio.TimeoutError as ex:
+            raise ClientMessageSendTimeout() from ex
 
         self.logger.info(f"Receive message from client: {message}")
 

@@ -27,5 +27,5 @@ class WebSocketTransport(TwoWayTransportInterface):
                 self.websocket_connection.receive_bytes(),
                 timeout=settings.MESSAGE_WAIT_TIMEOUT
             )
-        except asyncio.TimeoutError:
-            raise ClientBinaryDataSendTimeout()
+        except asyncio.TimeoutError as ex:
+            raise ClientBinaryDataSendTimeout() from ex

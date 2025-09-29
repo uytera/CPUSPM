@@ -12,7 +12,7 @@ import settings
 from core.worker.messages import WorkerMessage, MessageTypes
 from core.worker.types import CommandType, ImageFormat
 from utils import get_console_logger, ColorSpace
-from core.worker.worker_process.processors.realizations.average_image_processor import AISessionInitInfo
+from core.worker.worker_process.processors.realizations.summary_image_processor import SISessionInitInfo
 from core.worker.worker_process.processors.realizations.heatmap_image_processor import HISessionInitInfo
 from core.worker.worker_process.transport_utils import async_blocking_retry_send, clear_pipe, async_blocking_retry_recv, \
     async_get_from_shared_memory, PipeWaitThread
@@ -435,7 +435,7 @@ class CPUCommands:
         self.worker_manager = worker_manager
 
     @asynccontextmanager
-    async def average_image_accumulator(
+    async def summary_image_accumulator(
             self,
             width: int,
             height: int,
@@ -449,7 +449,7 @@ class CPUCommands:
             await self.worker_manager.send_message_without_result(
                 WorkerMessage(
                     type=MessageTypes.data,
-                    command=CommandType.average_image,
+                    command=CommandType.summary_image,
                     session_id=session_id,
                     data=image
                 )
@@ -457,8 +457,8 @@ class CPUCommands:
 
         await self.worker_manager.init_session(
             session_id,
-            CommandType.average_image,
-            init_data=AISessionInitInfo(
+            CommandType.summary_image,
+            init_data=SISessionInitInfo(
                 width=width,
                 height=height,
                 img_format=img_format,
@@ -472,7 +472,7 @@ class CPUCommands:
             data.append(
                 await self.worker_manager.clear_session_with_result(
                     session_id,
-                    CommandType.average_image,
+                    CommandType.summary_image,
                 )
             )
 

@@ -17,7 +17,7 @@ from core.worker.worker_process.transport_utils import blocking_retry_send, send
 #############################################################
 
 @dataclass
-class AISessionInitInfo:
+class SISessionInitInfo:
     width: int
     height: int
     img_format: ImageFormat
@@ -25,7 +25,7 @@ class AISessionInitInfo:
 
 
 @dataclass
-class AIContext(ProcessorContext):
+class SIContext(ProcessorContext):
     width: int
     height: int
     img_format: ImageFormat
@@ -34,11 +34,11 @@ class AIContext(ProcessorContext):
     img_compression_level = 90
 
 
-class AverageImageProcessor(Processor):
-    processor_abbreviation = "AI"
+class SummaryImageProcessor(Processor):
+    processor_abbreviation = "SI"
 
     def init_session(self, message: WorkerMessage):
-        message_data: AISessionInitInfo = message.data
+        message_data: SISessionInitInfo = message.data
 
         session_context = self._sessions.get(message.session_id)
         if session_context is not None:
@@ -49,8 +49,8 @@ class AverageImageProcessor(Processor):
             np.float32
         )
 
-        session_context = AIContext(
-            command_type=CommandType.average_image,
+        session_context = SIContext(
+            command_type=CommandType.summary_image,
             width=message_data.width,
             height=message_data.height,
             img_format=message_data.img_format,
@@ -78,7 +78,7 @@ class AverageImageProcessor(Processor):
         if session_id is None:
             raise Exception(f"Session must specified for {self.processor_abbreviation} command processing")
 
-        session_context: AIContext = self._sessions.get(session_id)
+        session_context: SIContext = self._sessions.get(session_id)
 
         if session_context is None:
             raise Exception(f"Session with id: {session_id} not exists but processing requested")
@@ -112,7 +112,7 @@ class AverageImageProcessor(Processor):
         image_buffer = BytesIO()
         try:
             self._logger.info(f"{session_id}|{self.processor_abbreviation}|Clear session")
-            session_context: AIContext = self._sessions[session_id]
+            session_context: SIContext = self._sessions[session_id]
 
             result = Image.fromarray(np.uint8(session_context.result_image_buffer))
             result.save(

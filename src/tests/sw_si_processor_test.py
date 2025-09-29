@@ -1,11 +1,10 @@
 import json
-import time
 from io import BytesIO
 
 import websocket
 from PIL import Image
 
-cpuspm_host = "192.168.122.175:8090"
+cpuspm_host = "0.0.0.0:8090"
 url = f"ws://{cpuspm_host}/ws"
 end_code = 5
 
@@ -20,7 +19,7 @@ ws = websocket.WebSocket()
 ws.connect(url)
 
 ws.send_text(json.dumps({
-    "flow_type": 1,
+    "flow_type": 0,
     "context_data": {
         "width": 1024,
         "height": 1024,
@@ -30,7 +29,6 @@ ws.send_text(json.dumps({
 
 print(f"Recv transferred permitted: {ws.recv()}")
 
-time.sleep(100)
 
 for image_path in images:
     with open(image_path, 'rb') as image_bytes:

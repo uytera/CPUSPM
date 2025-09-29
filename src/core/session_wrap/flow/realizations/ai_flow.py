@@ -2,11 +2,11 @@ from core.session_wrap.flow import TwoWayFlowInterface
 from core.session_wrap.messages import IncomingMessage
 
 
-class AIFlow(TwoWayFlowInterface):
-    flow_name = "AI"
+class SIFlow(TwoWayFlowInterface):
+    flow_name = "SI"
 
     async def start(self, init_message: IncomingMessage):
-        async with self._cpu_commands.average_image_accumulator(
+        async with self._cpu_commands.summary_image_accumulator(
                 init_message.context_data.height,
                 init_message.context_data.width,
                 init_message.context_data.img_format,

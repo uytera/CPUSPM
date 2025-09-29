@@ -5,6 +5,7 @@ import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from starlette.responses import PlainTextResponse
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from uvicorn_worker import UvicornWorker
 from websockets import ConnectionClosedOK, ConnectionClosed
@@ -17,7 +18,7 @@ from utils.exceptions import ClientTimeout
 from utils.metrics import CpuSpmMetrics
 from utils.metrics.manager import get_metrics_manager
 
-ws_timeout = (int(os.environ['WEBSOCKET_TIMEOUT']) + 10) // 2
+ws_timeout = (settings.WEBSOCKET_TIMEOUT + 10) // 2
 
 
 class CustomUvicornWorker(UvicornWorker):
@@ -64,7 +65,7 @@ async def lifespan(app: FastAPI):
 metrics_manager = get_metrics_manager()
 app = FastAPI(
     title='video recoding service',
-    version=settings.APP_VERSION,
+    version="CPUSPM-demo",
     description='Save video and estimate liveness for it',
     root_path=settings.ROOT_PATH,
     lifespan=lifespan
@@ -111,3 +112,8 @@ async def websocket_endpoint(websocket: WebSocket):
             time.time() - connection_start_time
         )
         metrics_manager.update_gauge_metric(CpuSpmMetrics.WebsocketConnectionCount.value, -1)
+
+
+@app.get('/metrics', response_class=PlainTextResponse)
+async def get_metrics():
+    return metrics_manager.form_prometheus_format()
